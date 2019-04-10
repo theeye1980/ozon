@@ -185,8 +185,9 @@ class rec_bd{
 												
 	function get_goods_to_push(){ # функция получения артикулов, которые не добавлены в озон и не имеют task_id
 		global $modx;
-		
-		$sql="SELECT * FROM `goods` WHERE `ozon_product_id`=0 and `task_id` = 1";
+				
+		$sql="SELECT * FROM `goods` WHERE `ozon_product_id`=0 and `task_id` = 0";
+		echo $sql;
 		$statement = $modx->query($sql);
         $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 		$i=0;
@@ -207,6 +208,10 @@ class rec_bd{
 	function rec_add_good($art,$get_arr){ # функция записи в бд результатов попытки записи товара, на входе массив ответа
 		# записываем либо task_id, либо код ошибки
 		global $modx;
+		$today = getdate();
+		$today_ts=$today[0];
+		$this->today_ts=$today_ts;
+		
 		
 		$task_id=$get_arr['result']['task_id'];
 		$add_error=$get_arr['error']['data'][0]['key'];
@@ -214,7 +219,7 @@ class rec_bd{
 		
 		$add_error .= ' / '.$add_error_value;
 		
-		$sql="update goods set `task_id`='$task_id',`add_error`='$add_error' where `vendorCode`='$art'";
+		$sql="update goods set `task_id`='$task_id',`add_error`='$add_error',`last_ozon_push`='$today_ts' where `vendorCode`='$art'";
 		echo $sql;
 		$modx->query($sql);
 	}
