@@ -1,15 +1,14 @@
 <?php
-
 define('MODX_API_MODE', true);
-
+require_once('/var/www/www-root/data/mail.ftp-technolight.ru/index.php');
+$modx=new modX();
+$modx->initialize('web');
 /*  
 
 	Скрипт обновления товаров БД из выгрузки fandeco.ru
 
 */
 $mark=3;
-$stocker=$_GET['stocker'];
-echo $stocker;
 
 ini_set('max_execution_time', 5200); //300 seconds = 5 minutes
 ini_set('memory_limit', '2200000000');
@@ -172,7 +171,7 @@ ini_set('memory_limit', '2200000000');
     }
     $xml_goods=$i-1;
     
-    //$xml_goods=12; //Временно
+    $xml_goods=12; //Временно
     
 # Пробегаем по всем артикулам xml, если такого товара в БД нет - добавляем, если есть - обновляем price, old_price, stock
     for($j=1;$j<$xml_goods;$j++){
@@ -181,11 +180,8 @@ ini_set('memory_limit', '2200000000');
            //обновляем цену и остатки 
            //var_dump($pictures[$j]);
            echo $main_picture[$j].' - '.$dop_picture[$j].'<br>';
-           if($stocker==1){
-                 update_stock($mark,$vendorCode[$j],$stock[$j]);   
-           } else {
-                update_good($mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);    
-           }
+		   update_good($mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);   
+           
            
         } else {
            //добавляем новый товар
@@ -193,23 +189,32 @@ ini_set('memory_limit', '2200000000');
    
         }
     }
-
+# записываем запись, что обновление произведено
+	$today = getdate();
+	$today_ts=$today[0];
+	//$this->today_ts=$today_ts;
+	$query = "update `orders_ozon` set `goods_xml_up`='$today_ts' where `id`='1'";
+	echo $query;
+    $modx->query($query);
 
 echo "<pre>";
-  print_r($arr_categories); 
-  print_r($arr_category_id);
+  mail("v.kosarev@list.ru", "Обновили товары", $message,
+ "From: webmaster@$SERVER_NAME\r\n"
+."Reply-To: webmaster@$SERVER_NAME\r\n"
+."X-Mailer: PHP/" . phpversion());
+  
   
 function   update_good($mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
     global $modx;
     $query = "update goods set `stock`='$stock',`mark`='$mark', `price`='$price',`old_price`='$old_price',`barcode`='$barcode',`length_box`='$length_box',`width_box`='$width_box',`height_box`='$height_box',`weight`='$weight',`length`='$length',`height`='$height',`width`='$width',`diameter`='$diameter',`dop_picture`='$dop_picture' where `vendorCode`='$vendorCode'";
-    echo "$query <br><br>";
+    //echo "$query <br><br>";
         $modx->query($query);
     
 }
 function   update_stock($mark,$vendorCode,$stock){
     global $modx;
     $query = "update goods set `stock`='$stock',`mark`='$mark' where `vendorCode`='$vendorCode'";
-    echo "$query <br><br>";
+    //echo "$query <br><br>";
         $modx->query($query);
     
 } 
@@ -304,7 +309,7 @@ function insert_good($barcode,$xml_di,$main_picture,$dop_picture,$stock,$price,$
                         '$style',
                         '$interior'
                      )";
-		echo "$query <br><br>";
+		//echo "$query <br><br>";
         $modx->query($query);
       
     
