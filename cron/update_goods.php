@@ -8,6 +8,9 @@ $modx->initialize('web');
 	Скрипт обновления товаров БД из выгрузки fandeco.ru
 
 */
+
+
+
 $mark=3;
 
 ini_set('max_execution_time', 5200); //300 seconds = 5 minutes
@@ -171,7 +174,7 @@ ini_set('memory_limit', '2200000000');
     }
     $xml_goods=$i-1;
     
-    $xml_goods=12; //Временно
+    //$xml_goods=12; //Временно
     
 # Пробегаем по всем артикулам xml, если такого товара в БД нет - добавляем, если есть - обновляем price, old_price, stock
     for($j=1;$j<$xml_goods;$j++){
@@ -197,12 +200,6 @@ ini_set('memory_limit', '2200000000');
 	echo $query;
     $modx->query($query);
 
-echo "<pre>";
-  mail("v.kosarev@list.ru", "Обновили товары", $message,
- "From: webmaster@$SERVER_NAME\r\n"
-."Reply-To: webmaster@$SERVER_NAME\r\n"
-."X-Mailer: PHP/" . phpversion());
-  
   
 function   update_good($mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
     global $modx;

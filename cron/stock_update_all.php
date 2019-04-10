@@ -1,6 +1,8 @@
 <?php
 define('MODX_API_MODE', true);
 require_once('/var/www/www-root/data/mail.ftp-technolight.ru/index.php');
+require_once('/var/www/www-root/data/mail.ftp-technolight.ru/good_bd.php');
+
 $modx=new modX();
 $modx->initialize('web');
 /*  
@@ -87,3 +89,10 @@ echo "<pre>";
                 $i++;
             }
         }
+# записываем запись, что обновление произведено
+	$today = getdate();
+	$today_ts=$today[0];
+	//$this->today_ts=$today_ts;
+	$query = "update `orders_ozon` set `stocks_up`='$today_ts' where `id`='1'";
+	echo $query;
+    $modx->query($query);
