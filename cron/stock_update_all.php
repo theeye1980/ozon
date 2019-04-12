@@ -85,7 +85,7 @@ echo "<pre>";
                     $i=0;
                 }
                 
-                if($m>3) break;
+                //if($m>3) break;
                 $i++;
             }
         }

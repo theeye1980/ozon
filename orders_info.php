@@ -1,9 +1,11 @@
 <?php
-$path=$_SERVER['PWD'] . '/mail.ftp-technolight.ru/good_bd.php';
-print_r($_SERVER);
-echo $path;
+define('MODX_API_MODE', true);
+require_once('/var/www/www-root/data/mail.ftp-technolight.ru/index.php');
+$modx=new modX();
+$modx->initialize('web');
 
-require_once $path;
+
+$modx->runSnippet('classes');
 
 ini_set('max_execution_time', 3600); //300 seconds = 5 minutes
 ini_set('memory_limit', '2000000000');
@@ -54,8 +56,14 @@ $last_order_id=$orders[$num_orders-1];
 echo "Всего заказов - $num_orders, последний $last_order_id, уведомляли -". $record->id ."<br><br>";
 
 if($last_order_id-$record->id>0){
-    echo "Надо уведомить и сделать запись - $to"; 
-    $mail_sender->new_order();
-   
+    
+    # шлем письма
+    
+    $mail_sender->new_order($last_order_id);
+    
+    # записываем новый $last_order_id
+    
+    $record->set_last_order_num($last_order_id);
+    
 }
 print_r($orders);

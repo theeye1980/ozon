@@ -1,4 +1,4 @@
-<?
+<?php
 define('MODX_API_MODE', true);
 
 class good_bd {
@@ -46,6 +46,28 @@ class good_bd {
     "Светодиодные фигуры"=>684
 );
     
+    function get_all_goods(){
+		global $modx;
+        $query = "select `id` from goods";
+		//echo $query;
+        $statement_tv = $modx->query($query);
+        $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
+		$i=1;
+        foreach($result_tv as $r_tv){
+			$ids[$i]=$r_tv['id'];
+			$i++;
+		}
+		return $ids;
+	
+	}
+	function get_good_by_id($id) { # функция вытаскивания данных из Базы в объект
+        global $modx;
+        $this->id=$id;
+		$query = "select * from goods where `id`=".$this->id;
+        $statement_tv = $modx->query($query);
+        $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
+        $this->fetching($result_tv);
+    }
     function get_good($ozon_product_id) { # функция вытаскивания данных из Базы в объект
         global $modx;
         $this->ozon_product_id=$ozon_product_id;
@@ -77,7 +99,6 @@ class good_bd {
         $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
         $this->fetching($result_tv);
     }
-	
 	function fetching($result_tv){
 		foreach($result_tv as $r_tv){
 			$this->barcode=$r_tv['barcode'];
@@ -130,6 +151,9 @@ class good_bd {
 			$this->last_ozon_up=$r_tv['last_ozon_up'];
 		}
 		# обрабатываем некоторые данные под формат озона
+		
+	   $this->ploshad=str_replace(' м2','',$this->ploshad);	
+	   
 	   $this->height_box=str_replace(' см.','',$this->height_box);
 	   $this->length_box=str_replace(' см.','',$this->length_box); 
 	   $this->width_box=str_replace(' см.','',$this->width_box);
@@ -145,9 +169,6 @@ class good_bd {
     
 		
 	}
-	
-	
-	
 	function rec_update_stock($ozon_product_id,$status,$error){ # функция записи в бд результатов попытки обновления стока
 		global $modx;
 		$today = getdate();
@@ -159,9 +180,36 @@ class good_bd {
 		$modx->query($sql);
 	}
 }
-
 class rec_bd{
+    function inc_get_up_page($new_page){
+		global $modx;
+		$sql="update `orders_ozon` set `update_page`='$new_page' where `id`=1";
+		echo $sql;
+		$modx->query($sql);
+	}
+    function get_up_page(){ # получает текущий номер страницы из БД
+		global $modx;
+        $query = "select `update_page` from orders_ozon where `id`=1";
+		$statement_tv = $modx->query($query);
+        $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
+		
+        foreach($result_tv as $r_tv){
+			$page=$r_tv['update_page'];
+		}
+		return $page;
 	
+	}
+	function set_last_order_num($last_order_id){
+		global $modx;
+		$sql="update orders_ozon set `ozon_id`='$last_order_id' where `id`=1";
+		echo $sql;
+		$modx->query($sql);
+	}
+	function set_validity($valid,$id){
+		global $modx;
+		$sql="update goods set `valid`='$valid' where `id`=$id";
+		$modx->query($sql);
+	}
 	function rec_update_good($ozon_product_id,$out){ # функция записи в бд результатов попытки обновления товара
 		global $modx;
 		$today = getdate();
@@ -171,7 +219,6 @@ class rec_bd{
 		$sql="update goods set `err_update`='$out',`last_ozon_up`='$today_ts' where `ozon_product_id`=$ozon_product_id";
 		$modx->query($sql);
 	}
-	
 	function rec_update_stock($ozon_product_id,$status,$error){ # функция записи в бд результатов попытки обновления стока
 		global $modx;
 		$today = getdate();
@@ -182,7 +229,6 @@ class rec_bd{
 		echo $sql;
 		$modx->query($sql);
 	}
-												
 	function get_goods_to_push(){ # функция получения артикулов, которые не добавлены в озон и не имеют task_id
 		global $modx;
 				
@@ -226,10 +272,10 @@ class rec_bd{
 	function add_ozon_id($ozon_id,$art){ # функция записи в бд id озона
 		global $modx;
 		$query = "update goods set `ozon_product_id`=$ozon_id where `vendorCode`='$art'";
+		echo $query;
         $modx->query($query);
 	}
 }
-
 class attr_values{
 	
 	function plafond_color_value($str){
@@ -345,19 +391,58 @@ class attr_values{
 		return strtr($str, $b2);
 	}
 	
-}
+	function ip_value($str){
+			$b2=array(
+			'20'=>'3',
+            '21'=>'3',
+            '22'=>'3',
+            '23'=>'3',
+            '24'=>'3',
+            '25'=>'3',
+            '26'=>'3',
+            '27'=>'3',
+            '28'=>'3',
+            '29'=>'3',
+            '33'=>'3',
+            '40'=>'4',
+            '43'=>'4',
+            '44'=>'4',
+            '53'=>'4',
+            '54'=>'4',
+            '55'=>'4',
+            '63'=>'5',
+            '65'=>'5',
+            '66'=>'5',
+            '67'=>'5',
+            '68'=>'5'
 
+		);
+		return strtr($str, $b2);
+	}
+		function lamp_type_value($str){
+			$b2=array(
+			'Накаливания'=>'6',
+            'Галогеновая'=>'2',
+            'Светодиодная'=>'7'
+
+		);
+		return strtr($str, $b2);
+	}
+	
+}
 class mailer{
-	function new_order(){ # функция уведомления менеджеров о наличии новых заказов
+	function new_order($last_order_id){ # функция уведомления менеджеров о наличии новых заказов
 		global $modx;
 		$message = $modx->getChunk('tplOrderToManager');
+		$subj="Пришел заказ с Озон #$last_order_id";
 		
         $modx->getService('mail', 'mail.modPHPMailer');
         $modx->mail->set(modMail::MAIL_BODY,$message);
         $modx->mail->set(modMail::MAIL_FROM,'mail@ftp-technolight.ru');
         $modx->mail->set(modMail::MAIL_FROM_NAME,'ftp-technolight.ru');
-        $modx->mail->set(modMail::MAIL_SUBJECT,"Пришел заказ с Озон");
+        $modx->mail->set(modMail::MAIL_SUBJECT,$subj);
         $modx->mail->address('to','v.kosarev@list.ru');
+        $modx->mail->address('to','info@fandeco.ru');
         $modx->mail->address('reply-to','mail@artelamp.it');
         $modx->mail->setHTML(true);
         if (!$modx->mail->send()) {
@@ -365,7 +450,23 @@ class mailer{
         }
         $modx->mail->reset();
 		
-	}	
+	}
+	function main_mail($message,$subject,$to){ # функция уведомления менеджеров о наличии новых заказов
+		global $modx;
+		
+		$modx->getService('mail', 'mail.modPHPMailer');
+        $modx->mail->set(modMail::MAIL_BODY,$message);
+        $modx->mail->set(modMail::MAIL_FROM,'mail@ftp-technolight.ru');
+        $modx->mail->set(modMail::MAIL_FROM_NAME,'ftp-technolight.ru');
+        $modx->mail->set(modMail::MAIL_SUBJECT,$subject);
+        $modx->mail->address('to',$to);
+        $modx->mail->address('reply-to','mail@artelamp.it');
+        $modx->mail->setHTML(true);
+        if (!$modx->mail->send()) {
+            $modx->log(modX::LOG_LEVEL_ERROR,'An error occurred while trying to send the email: '.$modx->mail->mailer->ErrorInfo);
+        }
+        $modx->mail->reset();
+		
+	}
 	
 }
-?>

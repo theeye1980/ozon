@@ -3,6 +3,9 @@ define('MODX_API_MODE', true);
 require_once('/var/www/www-root/data/mail.ftp-technolight.ru/index.php');
 $modx=new modX();
 $modx->initialize('web');
+
+$modx->runSnippet('classes');
+
 /*  
 
 	Скрипт обновления товаров БД из выгрузки fandeco.ru
@@ -38,7 +41,7 @@ ini_set('memory_limit', '2200000000');
 	
 	$arr_categories=$arr_categories['category'];
 	
-	$i=1;
+	$i=0;
 	foreach ($categories->category as $item) {
 	    $category_id[$i]=$item['id'];
 	    $i++;
@@ -47,7 +50,7 @@ ini_set('memory_limit', '2200000000');
 	
 	
 	# преобразовываем id категорий в одномерный массив
-	$i=1;
+	$i=0;
 	foreach($category_id as $c){
 	    $arr_category_id[$i]=$c[0];
 	   $i++; 
@@ -174,7 +177,18 @@ ini_set('memory_limit', '2200000000');
     }
     $xml_goods=$i-1;
     
-    //$xml_goods=12; //Временно
+    //$xml_goods=120; //Временно
+# Проверка корректного обновления, если     $xml_goods > 100, то все корректно и тогда сбрасываем остаток всех товаров в ноль для новой установки, если нет, уведомляем об ошбике
+
+if($xml_goods>100){
+    $query = "update goods set `stock`='0',`mark`='$mark' where 1";
+    $modx->query($query);
+} else {
+     $mail_sender = new mailer;  
+     $mail_sender->main_mail("Надо проверить","Не удалось загрузить файл данных","v.kosarev@list.ru");
+     break;
+}
+    
     
 # Пробегаем по всем артикулам xml, если такого товара в БД нет - добавляем, если есть - обновляем price, old_price, stock
     for($j=1;$j<$xml_goods;$j++){
@@ -182,8 +196,8 @@ ini_set('memory_limit', '2200000000');
         if($index) {
            //обновляем цену и остатки 
            //var_dump($pictures[$j]);
-           echo $main_picture[$j].' - '.$dop_picture[$j].'<br>';
-		   update_good($mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);   
+           echo "$cat_id[$j] -   $cat[$j] - $vendorCode[$j] <br>";
+		   update_good($cat[$j],$mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);   
            
            
         } else {
@@ -201,9 +215,9 @@ ini_set('memory_limit', '2200000000');
     $modx->query($query);
 
   
-function   update_good($mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
+function   update_good($cat,$mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
     global $modx;
-    $query = "update goods set `stock`='$stock',`mark`='$mark', `price`='$price',`old_price`='$old_price',`barcode`='$barcode',`length_box`='$length_box',`width_box`='$width_box',`height_box`='$height_box',`weight`='$weight',`length`='$length',`height`='$height',`width`='$width',`diameter`='$diameter',`dop_picture`='$dop_picture' where `vendorCode`='$vendorCode'";
+    $query = "update goods set `cat`='$cat',`stock`='$stock',`mark`='$mark', `price`='$price',`old_price`='$old_price',`barcode`='$barcode',`length_box`='$length_box',`width_box`='$width_box',`height_box`='$height_box',`weight`='$weight',`length`='$length',`height`='$height',`width`='$width',`diameter`='$diameter',`dop_picture`='$dop_picture' where `vendorCode`='$vendorCode'";
     //echo "$query <br><br>";
         $modx->query($query);
     
