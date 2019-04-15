@@ -45,7 +45,12 @@ class good_bd {
     "Ленты"=>684,
     "Светодиодные фигуры"=>684
 );
-    
+    function result_sql($sql){
+        global $modx;
+        $statement = $modx->query($sql);
+        $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+        return $result;
+    }
     function get_all_goods(){
 		global $modx;
         $query = "select `id` from goods";
@@ -181,6 +186,7 @@ class good_bd {
 	}
 }
 class rec_bd{
+    
     function inc_get_up_page($new_page){
 		global $modx;
 		$sql="update `orders_ozon` set `update_page`='$new_page' where `id`=1";
@@ -272,6 +278,23 @@ class rec_bd{
 	function add_ozon_id($ozon_id,$art){ # функция записи в бд id озона
 		global $modx;
 		$query = "update goods set `ozon_product_id`=$ozon_id where `vendorCode`='$art'";
+		echo $query;
+        $modx->query($query);
+	}
+	function stocks_prices_from_teleport($id,$price,$stock,$action_price,$sale){ # записываем остатки и цены из телепорта в БД
+	    global $modx;
+	    if($sale=='true') {
+	      $query = "update goods set `stock`='$stock',`price`='$action_price',`old_price`='$price' where `id`='$id'";  
+	    } else {
+	      $query = "update goods set `stock`='$stock',`price`='$price',`old_price`='0' where `id`='$id'";  
+	    }
+		
+		echo $query.'<br>';
+        $modx->query($query);
+	}
+	function set_stock_zero_to_brand($vendor){ # устанавливаем остатки, равные нулю для всех товаров бренда
+	    global $modx;
+		$query = "update goods set `stock`=0 where `vendor`='$vendor'";
 		echo $query;
         $modx->query($query);
 	}
@@ -469,4 +492,15 @@ class mailer{
 		
 	}
 	
+}
+class useful{
+    function objectToArray($object) {
+        if( !is_object($object) && !is_array($object)) {
+            return $object;
+        }
+        if( is_object($object )) {
+            $object = get_object_vars($object);
+        }
+        return array_map('objectToArray', $object);
+    }
 }

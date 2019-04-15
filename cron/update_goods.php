@@ -7,30 +7,27 @@ $modx->initialize('web');
 $modx->runSnippet('classes');
 
 /*  
-
 	Скрипт обновления товаров БД из выгрузки fandeco.ru
-
 */
 
+$mark=4;
 
-
-$mark=3;
-
-ini_set('max_execution_time', 5200); //300 seconds = 5 minutes
-ini_set('memory_limit', '2200000000');
+ini_set('max_execution_time', 2400); //300 seconds = 5 minutes
+ini_set('memory_limit', '1200000000');
 
 // временно очищаем все нах товары
 //$modx->query("TRUNCATE TABLE `goods`");
 
 # 1. выдернули все товары с сайта? На выходе $vendorCode_bd
     
-    $query = "select vendorCode from goods";
+    $query = "select id,vendorCode from goods";
     $statement_tv = $modx->query($query);
     $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
 
     $i=1;
     foreach($result_tv as $r_tv){
         $vendorCode_bd[$i]= $r_tv['vendorCode'];
+        $id_bd[$i]= $r_tv['id'];
         $i++;
     }
 
@@ -55,7 +52,10 @@ ini_set('memory_limit', '2200000000');
 	    $arr_category_id[$i]=$c[0];
 	   $i++; 
 	}
+
 	
+
+
 	
 	$offer =  $xml_array->shop->offers->offer;
 	$i=1;
@@ -177,7 +177,10 @@ ini_set('memory_limit', '2200000000');
     }
     $xml_goods=$i-1;
     
-    //$xml_goods=120; //Временно
+    print_r($xml_goods);
+
+    
+   // $xml_goods=10000; //Временно
 # Проверка корректного обновления, если     $xml_goods > 100, то все корректно и тогда сбрасываем остаток всех товаров в ноль для новой установки, если нет, уведомляем об ошбике
 
 if($xml_goods>100){
@@ -188,18 +191,15 @@ if($xml_goods>100){
      $mail_sender->main_mail("Надо проверить","Не удалось загрузить файл данных","v.kosarev@list.ru");
      break;
 }
-    
+
     
 # Пробегаем по всем артикулам xml, если такого товара в БД нет - добавляем, если есть - обновляем price, old_price, stock
     for($j=1;$j<$xml_goods;$j++){
         $index=array_search($vendorCode[$j],$vendorCode_bd);
         if($index) {
            //обновляем цену и остатки 
-           //var_dump($pictures[$j]);
-           echo "$cat_id[$j] -   $cat[$j] - $vendorCode[$j] <br>";
-		   update_good($cat[$j],$mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);   
-           
-           
+           echo "$cat_id[$j] - $id_bd[$index] -   $cat[$j] - $vendorCode[$j] <br>";
+		   update_good($id_bd[$index],$cat[$j],$mark,$vendorCode[$j],$stock[$j],$price[$j],$old_price[$j],$barcode[$j],$length_box[$j],$width_box[$j],$height_box[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$dop_picture[$j]);   
         } else {
            //добавляем новый товар
            insert_good($barcode[$j],$xml_di[$j],$main_picture[$j],$dop_picture[$j],$stock[$j],$price[$j],$old_price[$j],$cat_id[$j],$parent_cat_id[$j],$cat[$j],$parent_cat[$j],$name[$j],$vendor[$j],$vendorCode[$j],$description[$j],$weight[$j],$length[$j],$height[$j],$width[$j],$diameter[$j],$mesto_montazha[$j],$lamp_type[$j],$soket[$j],$power[$j],$arm_material[$j],$col_plafond[$j],$form_plafond[$j],$warranty[$j],$mat_plafond[$j],$ploshad[$j],$length_box[$j],$width_box[$j],$height_box[$j],$country_origin[$j],$country_production[$j],$arm_color[$j],$collection[$j],$forma[$j],$lamp_sum[$j],$ip[$j],$style[$j],$interior[$j]);
@@ -215,10 +215,10 @@ if($xml_goods>100){
     $modx->query($query);
 
   
-function   update_good($cat,$mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
+function   update_good($id,$cat,$mark,$vendorCode,$stock,$price,$old_price,$barcode,$length_box,$width_box,$height_box,$weight,$length,$height,$width,$diameter,$dop_picture){
     global $modx;
-    $query = "update goods set `cat`='$cat',`stock`='$stock',`mark`='$mark', `price`='$price',`old_price`='$old_price',`barcode`='$barcode',`length_box`='$length_box',`width_box`='$width_box',`height_box`='$height_box',`weight`='$weight',`length`='$length',`height`='$height',`width`='$width',`diameter`='$diameter',`dop_picture`='$dop_picture' where `vendorCode`='$vendorCode'";
-    //echo "$query <br><br>";
+    $query = "update goods set `cat`='$cat',`stock`='$stock',`mark`='$mark', `price`='$price',`old_price`='$old_price',`barcode`='$barcode',`length_box`='$length_box',`width_box`='$width_box',`height_box`='$height_box',`weight`='$weight',`length`='$length',`height`='$height',`width`='$width',`diameter`='$diameter',`dop_picture`='$dop_picture' where `id`='$id'";
+    echo "$query <br><br>";
         $modx->query($query);
     
 }
