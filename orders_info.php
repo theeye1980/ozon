@@ -30,7 +30,7 @@ $json = '{
 
 */
 
-$since="2019-01-01T14:39:46.033Z";
+$since="2019-04-24T14:39:46.033Z";
 $to = date("c");
 
 $json=$modx->getChunk('order_list_json',array(

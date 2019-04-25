@@ -60,21 +60,21 @@ foreach($arr_all_xml['file'] as $url_xml){
      foreach($xml->item as $i){
          
          # ищем id в таблице бд по товару
-         $index=array_search($e['article'],$vendorCode_bd);
          
          $e=objectToArray($i);
+ 
+        $index=array_search((string)$e['article'],$vendorCode_bd);
          
          # устанавливаем значения цены и остатка в БД
+         
          $record->stocks_prices_from_teleport($id_bd[$index],$e['price'],$e['stock'],$e['action_price'],$e['sale']);
          echo '<br>';
-         //print_r ($e);
+         print_r ($e);
      }
     
 }
 
 
-
- 
 function objectToArray($object) {
         if( !is_object($object) && !is_array($object)) {
             return $object;

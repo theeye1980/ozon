@@ -1,21 +1,15 @@
 <?php
-define('MODX_API_MODE', true);
-require_once('/var/www/www-root/data/mail.ftp-technolight.ru/index.php');
-
-$modx=new modX();
-$modx->initialize('web');
-
-ini_set('max_execution_time', 1800); //300 seconds = 5 minutes
-ini_set('memory_limit', '1200000000');
+ini_set('max_execution_time', 800); //300 seconds = 5 minutes
+ini_set('memory_limit', '600000000');
 
 
 
 # Подключаем классы и создаем объекты для их использования
 
-$modx->runSnippet('classes');
+//$modx->runSnippet('classes');
 
-$my_snip = new useful;
-$record = new rec_bd;
+//$my_snip = new useful;
+//$record = new rec_bd;
 
 echo "<pre>";
 
@@ -61,33 +55,23 @@ $vendor="Arte Lamp";
 
 echo "<pre>";
 
+$arr_arte_msk = array();
 # пробегаем по 
+$i=1;
 foreach ($arr_1c_goods as $good){
   
-    echo $good['article'] . ' - ' . $good['region'] . ' -- ' . $good['stock'] . "<br>";  
+    if($good['region']=='Москва' && $good['vendor']=='ARTELAMP'){
+        
+        $arr_arte_msk[$i]['article'] = $good['article'];
+        $arr_arte_msk[$i]['stock'] = $good['stock'];
+        $i++;
+    }
     
 }
 
 
-//print_r($arr_1c_goods);
-
-/*
-
-# Пробегаем по всем товарам и устанавливаем нужные значения
-     foreach($xml->item as $i){
-         
-         # ищем id в таблице бд по товару
-         $index=array_search($e['article'],$vendorCode_bd);
-         
-         # устанавливаем значения цены и остатка в БД
-         $record->stocks_prices_from_teleport($id_bd[$index],$e['price'],$e['stock'],$e['action_price'],$e['sale']);
-         echo '<br>';
-         //print_r ($e);
-     }
-    
-
-*/
-
+print_r($arr_arte_msk);
+print_r($arr_1c_goods);
 
  
 function objectToArray($object) {

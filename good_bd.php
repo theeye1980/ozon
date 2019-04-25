@@ -51,6 +51,20 @@ class good_bd {
         $result = $statement->fetchAll(PDO::FETCH_ASSOC);
         return $result;
     }
+    function get_all_ozon_id(){ # Выдергиваем все id в системе Озон из нашей БД
+		global $modx;
+        $query = "select `ozon_product_id` from goods where `stock`>0";
+		//echo $query;
+        $statement_tv = $modx->query($query);
+        $result_tv = $statement_tv->fetchAll(PDO::FETCH_ASSOC);
+		$i=1;
+        foreach($result_tv as $r_tv){
+			$ids[$i]=$r_tv['ozon_product_id'];
+			$i++;
+		}
+		return $ids;
+	
+	}
     function get_all_goods(){
 		global $modx;
         $query = "select `id` from goods";
@@ -284,7 +298,7 @@ class rec_bd{
 	function stocks_prices_from_teleport($id,$price,$stock,$action_price,$sale){ # записываем остатки и цены из телепорта в БД
 	    global $modx;
 	    if($sale=='true') {
-	      $query = "update goods set `stock`='$stock',`price`='$action_price',`old_price`='$price' where `id`='$id'";  
+	      $query = "update goods set `stock`='$stock',`price`='$action_price',`old_price`='$action_price' where `id`='$id'";  
 	    } else {
 	      $query = "update goods set `stock`='$stock',`price`='$price',`old_price`='0' where `id`='$id'";  
 	    }
@@ -413,7 +427,6 @@ class attr_values{
 		);
 		return strtr($str, $b2);
 	}
-	
 	function ip_value($str){
 			$b2=array(
 			'20'=>'3',
@@ -442,7 +455,7 @@ class attr_values{
 		);
 		return strtr($str, $b2);
 	}
-		function lamp_type_value($str){
+	function lamp_type_value($str){
 			$b2=array(
 			'Накаливания'=>'6',
             'Галогеновая'=>'2',
@@ -453,6 +466,7 @@ class attr_values{
 	}
 	
 }
+# класс с некоторыми полезными функциями
 class mailer{
 	function new_order($last_order_id){ # функция уведомления менеджеров о наличии новых заказов
 		global $modx;
@@ -493,6 +507,7 @@ class mailer{
 	}
 	
 }
+# класс с некоторыми полезными функциями
 class useful{
     function objectToArray($object) {
         if( !is_object($object) && !is_array($object)) {
@@ -503,4 +518,102 @@ class useful{
         }
         return array_map('objectToArray', $object);
     }
+}
+# класс работы с API Озон
+class ozon_api{
+    # Устанавливаем хост и данные для авторизации
+    var  $url1='api-seller.ozon.ru';
+    var  $clientId=9241;
+    var  $ApiKey='4efaade2-dbd3-4b0d-8ce4-f849f97708b5';
+    
+    # задаем возможные адреса, куда обращаемся
+    var  $activate_url='/v1/products/activate'; // для активации одного товара
+    var  $deactivate_url='/v1/products/deactivate'; // для деактивации одного товара
+    
+    function deactivate_good($json){ # деактивируем один товар, в json ожидаем один product_id
+         $res=$this->curl_ozon($this->deactivate_url,$json);
+         return $res;
+    }
+    function activate_good($json){  # активируем один товар, в json ожидаем один product_id
+         $res=$this->curl_ozon($this->activate_url,$json);
+         return $res;
+    }
+    function deactivate_all_good($product_ids){ # деактивируем все товары, на входе ожидаем массив с product_id
+         global $modx;
+         $response='';
+         foreach ($product_ids as $id){
+             $json='{"product_id":' . $id . '}';
+             $response .= $this->curl_ozon($this->deactivate_url,$json);
+         }
+         return $response;
+    }
+    function activate_all_good($product_ids){ # деактивируем все товары, на входе ожидаем массив с product_id
+         global $modx;
+         $response='';
+         foreach ($product_ids as $id){
+             $json='{"product_id":' . $id . '}';
+             $response .= $this->curl_ozon($this->activate_url,$json);
+         }
+         return $response;
+    }
+    function curl_ozon($comand_url,$json){
+            # Формируем конечный URL, куда стучимся
+            $url=$this->url1 . $comand_url;
+            
+            # Формируем запрос
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json",
+                                                        "Client-Id:" . $this->clientId,
+                                                        "Api-Key:" . $this->ApiKey)
+            );
+            curl_setopt($ch, CURLOPT_POST, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+            
+            # Получаем json результат и освобождаем память
+            
+            $result = curl_exec($ch);
+            curl_close($ch);
+            
+            return $result;
+    }
+    
+}
+# класс работы с API 1C
+class api_1c{ 
+    # Устанавливаем хост и данные для авторизации
+    var $https_user='webuser';
+    var $https_password='web@user';
+    var $url1='http://msk1.technolight.ru:7780';
+     
+    
+    # задаем возможные адреса, куда обращаемся
+    var $catalog_get ='/br/hs/fandeco/catalog_get'; //Post запрос на получение цен по брендам, для каждого бренда отдельный запрос
+    var $stock_get ='/br/hs/fandeco/stock_update'; //Post запрос на получение остатков по всем товарам в 1С
+    
+    function base_ping($comand_url,$json){
+        $userpwd = $this->https_user . ':' . $this->https_password;
+        $json = '{}';
+        
+        # Формируем конечный URL, куда стучимся
+        $url=$this->url1 . $comand_url;
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Content-Type: application/json, charset=UTF-8"));
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        curl_setopt($ch, CURLOPT_USERPWD, $this->userpwd);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
+        
+        $result = curl_exec($ch);
+        curl_close($ch);
+        
+        $arr_1c_goods=json_decode($result, true);
+    }    
+    
+    
+    
 }
